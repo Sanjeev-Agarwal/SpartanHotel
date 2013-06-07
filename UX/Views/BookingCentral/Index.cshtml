@@ -1,0 +1,94 @@
+﻿@model UX.Models.InitialBookingViewModel
+
+@{
+    ViewBag.Title = Model.Title;
+    Layout = "~/Views/Shared/_BootstrapLayout.basic.cshtml";
+}
+
+      <div class="hero-unit">
+        
+        <p>@Model.BookingIntroduction</p>        
+        <div class="form-inline">
+             <select data-bind="value: numberAdults">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+            </select>
+            <select data-bind="value: cityId">
+                <option>Select a City</option>
+                <option>Bangalore</option>
+                <option>Mumbai</option>
+            </select>
+            <input class="input-medium" placeholder="Check-in Date" data-bind="value: checkin" type="date"/>
+            <div class="input-append">
+                <input class="input-medium" placeholder="Check-out Date" data-bind="value: checkout"  type="date"/>
+                <button class="btn" type="button" data-bind="click: findRooms">Go!</button>
+            </div>
+        </div>
+      </div>
+
+    <!-- ko foreach: rows -->
+    <div class="row" data-bind="foreach: rooms">
+        <div class="span4">
+          <input type="hidden"  />
+          <p data-bind="text: description"></p>
+          <p><button class="btn btn-primary" data-bind="click: $root.bookIt, id:id">Book it! &raquo;</button></p>
+        </div>
+     </div>
+
+
+    <!-- /ko -->
+
+@section Scripts
+{
+    <script type="text/javascript">
+        var RoomType = function(name, description, id) {
+            var self = this;
+            self.name = name;
+            self.description = description;
+            self.id = id;
+        };
+
+        var RoomTypeRow = function(roomTypes) {
+            var self = this;
+            self.rooms = ko.observableArray(roomTypes);
+        };
+
+        var KoViewModel = function () {
+            var self = this;
+            self.rows = ko.observableArray();
+            self.numberAdults = ko.observable(2);
+            //self.numberAdults = "2";
+            self.cityId = ko.observable();
+            //self.cityId = "Bangalore";
+            self.checkin = ko.observable();
+            //self.checkin = "6/5/2013";
+            self.id = ko.observable();
+            self.checkout = ko.observable();
+            //self.checkout = "6/6/2013";
+            self.findRooms = function () {
+
+                var url = "http://localhost:8602/api/SearchRoom?CityId=" + bookingModel.cityId() + "&NumberOfRooms=" + bookingModel.numberAdults() + "&CheckinDate=" + bookingModel.checkin() + "&CheckoutDate=" + bookingModel.checkout()
+                //$.getJSON("http://localhost:8602/api/SearchRoom?CityId=Bangalore&NumberOfRooms=2&CheckinDate=6/5/2013&CheckoutDate=6/6/2013", "", function (roomsData) {
+                $.getJSON(url, "", function (roomsData) {
+                    //This ought to be where we call the api and get back the rooms data then map it to the types
+                    var rooms = new Array();
+
+                    $.each(roomsData, function () {
+                        var room = new RoomTypeRow([new RoomType(this.City, this.RoomDescription, this.RoomId)]);
+                        rooms.push(room);
+                    });
+                    self.rows(rooms);
+                });
+
+            };
+            self.bookIt = function(room) {
+                window.location.href = '@Url.Action("Index", "Reservation")?roomId=' + room.id + '&fromDate=' + self.checkin._latestValue + '&toDate=' + self.checkout._latestValue;
+            };
+        };
+        var bookingModel = new KoViewModel();
+        ko.applyBindings(bookingModel);
+    </script>
+}
